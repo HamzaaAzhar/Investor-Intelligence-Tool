@@ -1,0 +1,20 @@
+services:
+  - type: web
+    name: investorlens
+    env: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn "run:app" --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+      - key: ANTHROPIC_API_KEY
+        sync: false          # Set manually in Render dashboard
+      - key: ADMIN_PASSWORD
+        sync: false          # Set manually in Render dashboard
+      - key: DATABASE_URL
+        value: sqlite:///investorlens.db
