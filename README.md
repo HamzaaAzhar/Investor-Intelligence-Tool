@@ -1,129 +1,101 @@
-# InvestorLens v9 - Upgraded Pakistan Investment Platform 🇵🇰
+# InvestorLens - Pakistan Investment Platform 🇵🇰
 
-## 🚀 Major Upgrades & New Features
+Pakistan-focused investment dashboard: PSX stocks, gold/silver, mutual funds,
+fixed income, REITs, a portfolio builder, and AI-assisted market insights.
 
-### 1. **Fixed Color Scheme** ✅
-- **Before**: Candy-like colors (bright purple #a855f7, blue #1890ff, cyan #06b6d4)
-- **After**: Cohesive dark theme colors matching the gold/neon accent palette:
-  - Technology: #00ff9d (neon green)
-  - Banking: #00c27a (green) 
-  - Cement: #f0b90b (gold)
-  - Fertilizer: #02c076 (emerald)
-  - Power: #b8890a (gold-dim)
-  - Energy: #f6465d (red - kept for danger/energy)
+## 📡 Live Data Sources
 
-All sector heatmap colors now blend seamlessly with the Binance/MEXC-inspired dark theme.
+| Data | Source | How | Update |
+|---|---|---|---|
+| PSX stocks (price, change, volume, high/low) | `dps.psx.com.pk/market-watch` | Scrapes the public quote table | 60s cache |
+| KSE-100 index | `dps.psx.com.pk/indices` | Scrapes the public indices page | 60s cache |
+| Historical stock prices (for volatility) | `dps.psx.com.pk/timeseries/eod/<symbol>` | Official EOD JSON endpoint | daily cache |
+| Gold & Silver spot | `gold-api.com` | Free XAU/XAG spot price, converted to PKR/tola via the live PKR/USD rate | 5 min cache |
+| Currency exchange rates | `exchangerate-api.com` | Free tier, no key required | 5 min cache |
+| Cryptocurrency prices | `coingecko.com` | Free, no key required | 5 min cache |
 
-### 2. **Improved Ticker** ✅
-- **Speed**: Reduced from 65s to 35s for normal scrolling speed
-- **Hover Functionality**: Ticker pauses when mouse hovers over it
-- **Better Readability**: Now you can actually read the stock prices while hovering
+No API keys are required for any of the above — they're all free, public endpoints.
 
-### 3. **Live Data Integration** 🔴 LIVE
-Enhanced data fetchers with **legitimate API sources**:
+**Not live** (static reference data, refreshed manually in code): mutual fund
+NAVs/returns (MUFAP), T-Bill/PIB/NSS rates (SBP), and REIT prices. These
+sources exist but require more involved scraping (PDF parsing, name
+matching) than was worth doing for this pass — see `fetch_funds()` /
+`fetch_fixed_income()` in `psxapp/data/fetchers.py` for the current state
+and where to pick it up.
 
-#### Currency Exchange Rates
-- **Primary**: ExchangeRate-API.com (free tier, 1500 req/month)
-- **Features**: Live PKR/USD, EUR, GBP, AED, SAR rates
-- **Update**: Every 30 minutes
+Every fetcher falls back to a hardcoded snapshot if its live source is
+unreachable, so the app degrades gracefully rather than breaking.
 
-#### Cryptocurrency Prices
-- **Source**: CoinGecko API (free, no API key required)
-- **Assets**: Bitcoin, Ethereum, Ripple, Cardano, Solana
-- **Features**: USD & PKR prices, 24h change percentage
-- **Update**: Every 5 minutes
+## 📈 Future Returns Projection
 
-#### Gold & Silver
-- **Primary**: pakgold.com live scraping
-- **Fallback**: GoldAPI.io (requires API key)
-- **Formats**: 24K, 22K, 21K, 18K tola prices + gram prices
-- **Update**: Every 30 minutes
+The Portfolio Builder includes a Monte Carlo projection panel: for each
+holding it estimates annualized drift and volatility — from real historical
+PSX daily closes where available (stocks), or documented category
+assumptions otherwise (funds, fixed income, gold, REITs) — then simulates
+3,000 geometric-Brownian-motion paths per 1/3/5-year horizon. It reports a
+median projected value, a p10–p90 range, probability of gain, and a
+confidence label based on how tight that range is.
 
-#### PSX Stock Market
-- **Source**: Official PSX API (dps.psx.com.pk)
-- **Data**: Live prices, volumes, daily changes
-- **Coverage**: Top 100 PSX stocks
-- **Update**: Every 5 minutes
+This is a statistical illustration, not personalized financial advice —
+the panel says so, and the disclaimer is also returned in the API response
+(`GET /portfolio/<id>/projection`). See `psxapp/portfolio/projection.py`.
 
-#### World Market Indices
-- **Markets**: S&P 500, NASDAQ, Dow Jones, FTSE, DAX, Nikkei, Shanghai, Sensex
-- **Update**: Every 15 minutes
-- **Note**: Can integrate Yahoo Finance or Twelve Data API
+## 🧮 Analytics Tools (`static/js/analytics-tools.js`)
 
-### 4. **Advanced Analytics Tools** 🧮
+Client-side calculators used across the dashboard:
+- **Technical indicators**: RSI, MACD, support/resistance (Fibonacci)
+- **Risk metrics**: historical volatility, Sharpe ratio, Value at Risk
+- **Portfolio math**: correlation, performance attribution, market breadth
+- **Monte Carlo simulation** (the building block the projection panel above wraps server-side)
 
-New analytical capabilities powered by `analytics-tools.js`:
+## 🤖 AI Insights
 
-#### Technical Indicators
-- **RSI (Relative Strength Index)**: Overbought/oversold signals
-- **MACD**: Trend following momentum indicator
-- **Moving Averages**: Multiple timeframes
-- **Support/Resistance**: Fibonacci retracement levels
+Each market page has a "Get AI Insights" panel that calls Claude
+(`POST /api/ai-insight`) for a short, data-driven read on that topic.
+Requires `ANTHROPIC_API_KEY` — without it, the endpoint returns a clear
+503 rather than fabricating an answer. Rate-limited to 20 requests/hour
+per IP and cached 15 minutes per topic.
 
-#### Risk Metrics
-- **Volatility Index**: Historical volatility calculation
-- **Sharpe Ratio**: Risk-adjusted returns
-- **Value at Risk (VaR)**: Portfolio risk measurement
-- **Beta Calculation**: Market correlation
-
-#### Portfolio Analytics
-- **Correlation Matrix**: Asset correlation analysis
-- **Performance Attribution**: Sector allocation vs stock selection
-- **Monte Carlo Simulation**: Future portfolio projections
-- **Diversification Score**: Portfolio concentration analysis
-
-#### Market Breadth
-- **Advance/Decline Ratio**: Market strength indicator
-- **Volume Analysis**: Trading activity metrics
-- **Sector Rotation**: Capital flow tracking
-
-### 5. **Authentication Fixes** ✅
-Fixed several auth flow issues:
-- Ensured `App.init()` is properly called after registration
-- Fixed error message element IDs
-- Improved session management
-- Better user state handling across page navigation
-
-## 📊 API Configuration
-
-### Required Environment Variables
-
-Create a `.env` file in the project root:
+## 🔧 Installation & Setup
 
 ```bash
-# Flask Configuration
-FLASK_ENV=development
-SECRET_KEY=your-secret-key-here
-DATABASE_URL=sqlite:///investorlens.db
+git clone https://github.com/HamzaaAzhar/Investor-Intelligence-Tool.git
+cd Investor-Intelligence-Tool
 
-# Optional: Enhanced API Keys (for better data quality)
-# GOLDAPI_KEY=your-goldapi-key        # Get from goldapi.io
-# ALPHA_VANTAGE_KEY=your-av-key       # Get from alphavantage.co
-# TWELVE_DATA_KEY=your-td-key         # Get from twelvedata.com
+# Create virtual environment
+python -m venv .venv
+source .venv/bin/activate     # Windows: .venv\Scripts\activate
 
-# Admin Access
-ADMIN_PASSWORD=admin123
+# Install dependencies
+pip install -r requirements.txt
+
+# Configure environment (all optional — sensible dev defaults apply if omitted)
+cp .env.example .env          # then edit .env
+
+# Run — tables are created automatically on first launch
+python run.py
 ```
 
-### Free API Tiers Used
-All primary data sources use FREE tiers:
-- ✅ **ExchangeRate-API**: 1,500 requests/month (free forever)
-- ✅ **CoinGecko**: Unlimited (rate limited, no key needed)
-- ✅ **PSX Official**: Public data, no key needed
-- ✅ **Web Scraping**: pakgold.com, MUFAP (public data)
+Navigate to: `http://localhost:5000`
+Admin analytics: `http://localhost:5000/analytics/admin?pwd=<ADMIN_PASSWORD>`
 
-### Optional Paid Upgrades
-For production-grade data quality:
-- **GoldAPI.io**: $10/month for live gold prices
-- **Alpha Vantage**: $50/month for comprehensive stock data
-- **Twelve Data**: $8/month for world indices
+### Environment Variables
+
+None are required to run the app — everything has a working default for
+local development. Set these for production or to enable optional features:
+
+```bash
+FLASK_ENV=production                        # enables secure cookies, disables debug
+SECRET_KEY=<random string>                  # Flask session signing
+JWT_SECRET_KEY=<random string, 32+ chars>   # auth tokens
+DATABASE_URL=sqlite:///investorlens.db      # or a Postgres URL for production
+ADMIN_PASSWORD=<your choice>                # protects /analytics/admin
+ANTHROPIC_API_KEY=<your key>                # required for the AI Insights panels
+```
 
 ## 🎨 Color Theme Reference
 
-The upgraded palette maintains consistency throughout:
-
 ```css
-/* Core Theme */
 --neon:      #00ff9d  /* Primary accent - Technology */
 --gold:      #f0b90b  /* Secondary accent - Cement */
 --green:     #02c076  /* Success - Fertilizer */
@@ -132,118 +104,22 @@ The upgraded palette maintains consistency throughout:
 --red:       #f6465d  /* Danger/Energy */
 ```
 
-## 🔧 Installation & Setup
-
-```bash
-# 1. Extract and navigate
-unzip investorlens-upgraded.zip
-cd investorlens-upgraded
-
-# 2. Create virtual environment
-python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# 3. Install dependencies
-pip install -r requirements.txt
-
-# 4. Set up environment
-cp .env.example .env
-# Edit .env with your configuration
-
-# 5. Initialize database
-python
->>> from psxapp import create_app, db
->>> app = create_app()
->>> with app.app_context():
->>>     db.create_all()
->>> exit()
-
-# 6. Run the app
-python run.py
-```
-
-Navigate to: `http://localhost:5000`
-
-## 📈 New Analytics Dashboard
-
-Access advanced analytics through the navigation menu:
-1. **Technical Analysis**: RSI, MACD, Bollinger Bands
-2. **Risk Metrics**: Sharpe, Sortino, VaR, Beta
-3. **Portfolio Tools**: Correlation, Attribution, Rebalancing
-4. **Market Breadth**: Advance/Decline, Volume, Momentum
-
-## 🔔 Coming Soon
-- Real-time price alerts
-- Watchlist management
-- Advanced charting with TradingView
-- News sentiment analysis
-- Mobile app (React Native)
-
-## 📝 Changelog
-
-### v9.0 (Current)
-- ✅ Fixed candy-like colors to cohesive theme
-- ✅ Ticker speed normalized (65s → 35s)
-- ✅ Ticker pause on hover
-- ✅ Live API integration (ExchangeRate, CoinGecko, PSX)
-- ✅ Advanced analytics tools module
-- ✅ Auth flow improvements
-- ✅ Enhanced data caching (5-30 min TTL)
-
-### v8.0 (Previous)
-- Multi-step registration with risk profiling
-- Portfolio builder
-- Trading simulator
-- AI insights (basic)
-
 ## 🛠️ Tech Stack
 
-**Backend**:
-- Flask 3.0
-- SQLAlchemy (SQLite/PostgreSQL)
-- Flask-JWT-Extended
-- BeautifulSoup4 (web scraping)
-- Requests (API calls)
+**Backend**: Flask 3.0 · SQLAlchemy (SQLite by default, Postgres via `DATABASE_URL`) · Flask-JWT-Extended · BeautifulSoup4 · Requests
 
-**Frontend**:
-- Vanilla JavaScript (ES6+)
-- Chart.js 4.4
-- CSS3 (custom dark theme)
-- No framework bloat!
+**Frontend**: Vanilla JavaScript (ES6+) · Chart.js 4.4 · CSS3, no framework
 
-**Data Sources**:
-- PSX Official API
-- ExchangeRate-API.com
-- CoinGecko API
-- pakgold.com
-- MUFAP NAV data
+**Deployment**: `render.yaml` blueprint included for one-click Render.com deploy (`gunicorn` via `Procfile`)
 
 ## 📱 Browser Support
 
-- ✅ Chrome/Edge (recommended)
-- ✅ Firefox
-- ✅ Safari
-- ⚠️ IE11 (not supported)
-
-## 🤝 Contributing
-
-This is a private project, but suggestions welcome via:
-- GitHub Issues
-- Email: support@investorlens.pk
+Chrome/Edge, Firefox, Safari. No IE11 support.
 
 ## 📄 License
 
-Proprietary - All rights reserved
-
-## 🙏 Acknowledgments
-
-- PSX for official market data
-- CoinGecko for free crypto API
-- ExchangeRate-API for forex data
-- Binance/MEXC for design inspiration
+Proprietary — All rights reserved
 
 ---
 
-**Built with ❤️ in Pakistan 🇵🇰**
-
-*Empowering Pakistani investors with world-class tools*
+**Built in Pakistan 🇵🇰 — Empowering Pakistani investors with world-class tools**

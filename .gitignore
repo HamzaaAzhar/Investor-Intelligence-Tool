@@ -4,6 +4,7 @@ __pycache__/
 *.pyo
 .env
 .env.*
+!.env.example
 *.db
 server.log
 {psxapp/
