@@ -59,8 +59,8 @@ per IP and cached 15 minutes per topic.
 ## 🔧 Installation & Setup
 
 ```bash
-git clone https://github.com/HamzaaAzhar/Investor-Intelligence-Tool.git
-cd Investor-Intelligence-Tool
+git clone https://github.com/HamzaaAzhar/InvestorLens.git
+cd InvestorLens
 
 # Create virtual environment
 python -m venv .venv
