@@ -1,8 +1,8 @@
 """
 Live data fetchers with fallback chain.
 Sources:
-  - PSX stocks:     dps.psx.com.pk (official PSX endpoint)
-  - Gold/Silver:    pakgold.com scraping
+  - PSX stocks:     dps.psx.com.pk (market-watch table + indices page)
+  - Gold/Silver:    gold-api.com (live XAU/XAG spot, converted via live PKR/USD)
   - Exchange rates: api.exchangerate-api.com (free, 1500 req/month)
   - T-Bills/PIBs:   SBP public auction results page
   - Mutual Funds:   MUFAP NAV data (mufap.com.pk)
