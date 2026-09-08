@@ -20,6 +20,7 @@ const API = (() => {
   const del  = (p)    => req('DELETE', p);
   return {
     login:           (email, pw) => post('/auth/login', { email, password: pw }),
+    guestLogin:      ()          => post('/auth/guest'),
     logout:          ()          => post('/auth/logout'),
     register:        (d)         => post('/auth/register', d),
     profileQuiz:     (d)         => post('/auth/profile-quiz', d),

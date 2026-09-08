@@ -198,7 +198,7 @@ const Auth = (() => {
     window.App?.init?.();
   }
 
-  // ── Boot: check existing session ───────────────────────────────────────
+  // ── Boot: no login screen — auto-provision a shared session ─────────────
   async function boot() {
     try {
       const d = await API.me();
@@ -209,6 +209,16 @@ const Auth = (() => {
         return true;
       }
     } catch {}
+    try {
+      const g = await API.guestLogin();
+      if(g && g.user) {
+        _user = g.user;
+        updateUI(g.user);
+        showApp();
+        return true;
+      }
+    } catch {}
+    // Guest auto-login failed (e.g. network error) — fall back to manual login
     showAuth();
     return false;
   }
@@ -220,8 +230,8 @@ const Auth = (() => {
       await API.logout();
       _user = null;
       API.clearCache();
-      showAuth();
-      document.querySelector('.auth-tab[data-tab="login"]')?.click();
+      await boot();
+      window.App?.init?.();
     });
   }
 

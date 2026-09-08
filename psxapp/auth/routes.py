@@ -1,4 +1,5 @@
 # psxapp/auth/routes.py
+import secrets
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import (
     create_access_token, jwt_required, get_jwt_identity,
@@ -67,6 +68,25 @@ def profile_quiz():
     user.risk_score, user.risk_label, user.profile_done = score, label, True
     db.session.commit()
     return jsonify({"ok":True,"risk_score":score,"risk_label":label,"user":user.to_dict()})
+
+
+_GUEST_EMAIL = "guest@investorlens.local"
+
+@auth_bp.route("/guest", methods=["POST"])
+def guest_login():
+    """Auto-provision (or reuse) a single shared account so the app is usable
+    with no login screen. All visitors share this account and its portfolios."""
+    user = User.query.filter_by(email=_GUEST_EMAIL).first()
+    if not user:
+        user = User(email=_GUEST_EMAIL, name="Guest")
+        user.set_password(secrets.token_urlsafe(32))
+        user.risk_score, user.risk_label, user.profile_done = 60, "moderate", True
+        db.session.add(user)
+        db.session.commit()
+    token = create_access_token(identity=str(user.id))
+    resp  = jsonify({"ok": True, "user": user.to_dict()})
+    set_access_cookies(resp, token)
+    return resp
 
 
 @auth_bp.route("/login", methods=["POST"])
