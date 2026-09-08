@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>InvestorLens 🇵🇰</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/static/css/style.css"/>
+</head>
+<body>
+
+<!-- ── AUTH OVERLAY ──────────────────────────────────────────────────────── -->
+<div id="auth-overlay">
+  <div id="auth-box">
+    <div class="auth-logo">
+      <div class="auth-flag">🇵🇰</div>
+      <div>
+        <div class="auth-brand">INVESTORLENS</div>
+        <div class="auth-tagline">Pakistan's Unified Investment Intelligence Platform</div>
+      </div>
+    </div>
+
+    <div id="auth-tabs">
+      <button class="auth-tab active" data-tab="login">Sign In</button>
+      <button class="auth-tab" data-tab="register">Create Account</button>
+    </div>
+
+    <!-- LOGIN -->
+    <form id="login-form" class="auth-form">
+      <div class="field-group">
+        <label class="field-label">Email Address</label>
+        <input type="email" id="login-email" class="field-input" placeholder="you@example.com" required/>
+      </div>
+      <div class="field-group">
+        <label class="field-label">Password</label>
+        <input type="password" id="login-password" class="field-input" placeholder="••••••••" required/>
+      </div>
+      <div id="login-error" class="auth-error hidden"></div>
+      <button type="submit" class="btn-primary full" id="login-btn">Sign In →</button>
+    </form>
+
+    <!-- REGISTER — multi-step -->
+    <div id="register-flow" class="auth-form hidden">
+
+      <div class="reg-step" id="step-1">
+        <div class="step-badge">Step 1 of 3 — Account Details</div>
+        <div class="field-group"><label class="field-label">Full Name</label><input type="text" id="reg-name" class="field-input" placeholder="Your full name"/></div>
+        <div class="field-group"><label class="field-label">Email Address</label><input type="email" id="reg-email" class="field-input" placeholder="you@example.com"/></div>
+        <div class="field-group"><label class="field-label">Password (min 8 chars)</label><input type="password" id="reg-password" class="field-input" placeholder="••••••••"/></div>
+        <div id="reg-error-1" class="auth-error hidden"></div>
+        <button class="btn-primary full" onclick="App.Auth.regNext(2)">Continue →</button>
+      </div>
+
+      <div class="reg-step hidden" id="step-2">
+        <div class="step-badge">Step 2 of 3 — Investor Profile</div>
+        <div class="quiz-grid">
+          <div class="field-group"><label class="field-label">Age Group</label>
+            <select id="q-age" class="field-input"><option value="">Select…</option><option value="18-25">18–25</option><option value="26-35">26–35</option><option value="36-45">36–45</option><option value="46-55">46–55</option><option value="55+">55+</option></select>
+          </div>
+          <div class="field-group"><label class="field-label">Monthly Income</label>
+            <select id="q-income" class="field-input"><option value="">Select…</option><option value="<30k">Under ₨30K</option><option value="30k-75k">₨30K–75K</option><option value="75k-150k">₨75K–150K</option><option value="150k-400k">₨150K–400K</option><option value="400k+">₨400K+</option></select>
+          </div>
+          <div class="field-group"><label class="field-label">Monthly Savings</label>
+            <select id="q-savings" class="field-input"><option value="">Select…</option><option value="<5k">Under ₨5K</option><option value="5k-15k">₨5K–15K</option><option value="15k-50k">₨15K–50K</option><option value="50k-150k">₨50K–150K</option><option value="150k+">₨150K+</option></select>
+          </div>
+          <div class="field-group"><label class="field-label">Investment Goal</label>
+            <select id="q-goal" class="field-input"><option value="">Select…</option><option value="wealth_growth">Long-term Growth</option><option value="passive_income">Passive Income</option><option value="capital_preservation">Capital Safety</option><option value="retirement">Retirement</option><option value="education">Education Fund</option><option value="property">Property Purchase</option></select>
+          </div>
+        </div>
+        <div id="reg-error-2" class="auth-error hidden"></div>
+        <div class="btn-row">
+          <button class="btn-ghost" onclick="App.Auth.regBack(1)">← Back</button>
+          <button class="btn-primary" onclick="App.Auth.regNext(3)">Continue →</button>
+        </div>
+      </div>
+
+      <div class="reg-step hidden" id="step-3">
+        <div class="step-badge">Step 3 of 3 — Risk Assessment</div>
+        <div class="field-group"><label class="field-label">Investment Horizon</label>
+          <div class="opt-grid" id="opt-horizon">
+            <button class="opt-btn" data-val="&lt;1yr">&lt; 1 Year</button>
+            <button class="opt-btn" data-val="1-3yr">1–3 Years</button>
+            <button class="opt-btn" data-val="3-5yr">3–5 Years</button>
+            <button class="opt-btn" data-val="5-10yr">5–10 Years</button>
+            <button class="opt-btn" data-val="10yr+">10+ Years</button>
+          </div>
+        </div>
+        <div class="field-group"><label class="field-label">If your portfolio dropped 20%, you would…</label>
+          <div class="opt-grid" id="opt-loss">
+            <button class="opt-btn" data-val="panic_sell">Sell Everything</button>
+            <button class="opt-btn" data-val="hold">Hold &amp; Wait</button>
+            <button class="opt-btn" data-val="buy_more">Buy More (Opportunity)</button>
+          </div>
+        </div>
+        <div class="field-group"><label class="field-label">Your Investment Experience</label>
+          <div class="opt-grid" id="opt-exp">
+            <button class="opt-btn" data-val="none">No Experience</button>
+            <button class="opt-btn" data-val="beginner">Just Starting</button>
+            <button class="opt-btn" data-val="some">Some Experience</button>
+            <button class="opt-btn" data-val="experienced">Experienced</button>
+          </div>
+        </div>
+        <label class="toggle-row" style="margin-top:6px">
+          <div class="tog-track" id="halal-pref-tog"><div class="tog-knob"></div></div>
+          <span class="toggle-label">Show only Shariah-compliant (Halal) investments</span>
+        </label>
+        <input type="hidden" id="q-halal-val" value="false"/>
+        <div id="reg-error-3" class="auth-error hidden"></div>
+        <div class="btn-row">
+          <button class="btn-ghost" onclick="App.Auth.regBack(2)">← Back</button>
+          <button class="btn-primary" id="reg-submit-btn" onclick="App.Auth.submitRegister()">Create Account &amp; See My Profile →</button>
+        </div>
+      </div>
+
+      <div class="reg-step hidden" id="step-4">
+        <div class="risk-result-box">
+          <div class="risk-badge-big" id="risk-badge">—</div>
+          <div class="risk-score-line">Your Risk Score: <strong id="risk-score-val">—</strong>/100</div>
+          <div class="risk-desc-text" id="risk-desc"></div>
+        </div>
+        <button class="btn-primary full" onclick="App.Auth.finishRegister()">Enter Platform →</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── MAIN APP ────────────────────────────────────────────────────────────── -->
+<div id="app" class="hidden">
+
+  <!-- TOP BAR -->
+  <header id="topbar">
+    <div class="tb-left">
+      <button class="icon-btn" id="sidebar-toggle">&#9776;</button>
+      <div class="logo-wrap">
+        <span class="logo-icon">🇵🇰</span>
+        <div>
+          <span class="logo-main">INVESTOR</span>
+          <span class="logo-sub">LENS</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="ticker-wrap">
+      <div class="ticker" id="ticker">Loading market data…</div>
+    </div>
+
+    <div class="tb-right">
+      <div style="text-align:right;font-size:10px;font-family:var(--mono)">
+        <div style="color:var(--neon-dim);font-weight:700">PSX OPEN</div>
+        <div id="clock" style="color:var(--t2)">--:--:--</div>
+      </div>
+      <div class="mkt-pill">
+        <span class="mkt-dot"></span>
+        KSE <span id="kse-live" style="color:var(--t1);font-weight:700">90,400</span>
+        <span id="kse-chg" class="up">▲2.6%</span>
+      </div>
+      <div class="user-pill">
+        <div class="avatar" id="user-avatar">U</div>
+        <div class="uname" id="user-name-display">User</div>
+        <div class="risk-tag" id="risk-chip">—</div>
+        <button class="icon-btn" id="logout-btn" title="Sign out">⏻</button>
+      </div>
+    </div>
+  </header>
+
+  <div id="layout">
+    <!-- SIDEBAR -->
+    <nav id="sidebar">
+      <div class="nav-section">Markets</div>
+      <button class="nav-btn active" data-page="overview">
+        <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Overview
+      </button>
+      <button class="nav-btn" data-page="gold">
+        <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        Gold &amp; Silver
+      </button>
+      <button class="nav-btn" data-page="stocks">
+        <svg class="nav-icon" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+        PSX Stocks
+      </button>
+      <button class="nav-btn" data-page="funds">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Mutual Funds
+      </button>
+      <button class="nav-btn" data-page="fixed">
+        <svg class="nav-icon" viewBox="0 0 24 24"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+        Bonds &amp; NSS
+      </button>
+      <button class="nav-btn" data-page="reits">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+        REITs
+      </button>
+
+      <div class="nav-section">Tools</div>
+      <button class="nav-btn" data-page="opportunities">
+        <svg class="nav-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        All Opportunities
+      </button>
+      <button class="nav-btn" data-page="portfolio">
+        <svg class="nav-icon" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+        Portfolio Builder
+      </button>
+      <button class="nav-btn" data-page="simulator">
+        <svg class="nav-icon" viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+        Simulator
+      </button>
+      <button class="nav-btn" data-page="profile">
+        <svg class="nav-icon" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+        My Profile
+      </button>
+
+      <div class="sb-footer">
+        <strong style="color:var(--t2)">⚠ Disclaimer</strong><br/>
+        Educational only. Not financial advice. Consult a licensed advisor before investing.
+        <div style="margin-top:6px;color:var(--t3)">InvestorLens v2.1</div>
+      </div>
+    </nav>
+
+    <!-- MAIN CONTENT -->
+    <main id="main">
+      <div id="page-hd">
+        <div>
+          <div id="page-title">Overview Dashboard</div>
+          <div id="page-sub">Pakistan Investment Intelligence</div>
+        </div>
+        <div class="live-badge"><div class="live-dot"></div>LIVE DATA</div>
+      </div>
+      <div id="content">
+        <div class="init-loader">
+          <div class="init-spinner"></div>
+          <div class="init-text">Initialising InvestorLens…</div>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script src="/static/js/api.js"></script>
+<script src="/static/js/charts.js"></script>
+<script src="/static/js/analytics-tools.js"></script>
+<script src="/static/js/pages.js"></script>
+<script src="/static/js/auth.js"></script>
+<script src="/static/js/main.js"></script>
+<script>
+  // Wire login form submit
+  document.addEventListener('DOMContentLoaded', function() {
+    const loginForm = document.getElementById('login-form');
+    if (loginForm) {
+      loginForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        window.App.Auth.submitLogin();
+      });
+    }
+    // Wire halal toggle to call Auth.toggleHalal
+    const halalTog = document.getElementById('halal-pref-tog');
+    if (halalTog) {
+      halalTog.addEventListener('click', function() {
+        window.App.Auth.toggleHalal();
+      });
+    }
+  });
+</script>
+</body>
+</html>

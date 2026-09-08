@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>InvestorLens — Analytics Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <style>
+    :root{--bg:#030810;--card:#0A1525;--brd:#162540;--grn:#00C27A;--blu:#2980FF;--gold:#E8BE3D;--txt:#D8E8F5;--m:#526D8C;}
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{background:var(--bg);color:var(--txt);font-family:'IBM Plex Sans',sans-serif;padding:24px;font-size:13px}
+    h1{font-size:20px;font-weight:700;margin-bottom:4px;color:var(--grn)}
+    .sub{color:var(--m);font-size:11px;margin-bottom:24px}
+    .kpis{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px;margin-bottom:24px}
+    .kpi{background:var(--card);border:1px solid var(--brd);border-radius:8px;padding:14px}
+    .kpi-l{font-size:10px;color:var(--m);text-transform:uppercase;letter-spacing:.6px;margin-bottom:4px}
+    .kpi-v{font-size:24px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--grn)}
+    .grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px}
+    .card{background:var(--card);border:1px solid var(--brd);border-radius:8px;padding:16px}
+    .card h3{font-size:12px;color:var(--m);text-transform:uppercase;margin-bottom:12px;letter-spacing:.6px}
+    table{width:100%;border-collapse:collapse;font-size:11px}
+    th{padding:6px 8px;color:var(--m);text-align:left;border-bottom:1px solid var(--brd)}
+    td{padding:6px 8px;border-bottom:1px solid rgba(22,37,64,.4)}
+    .bar-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+    .bar-label{width:100px;font-size:11px;color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .bar-track{flex:1;height:6px;background:var(--brd);border-radius:3px}
+    .bar-fill{height:6px;border-radius:3px;background:var(--grn)}
+    .bar-val{font-size:10px;color:var(--m);width:30px;text-align:right;font-family:'IBM Plex Mono',monospace}
+    .refresh{margin-bottom:16px}
+    .btn{background:rgba(0,194,122,.12);border:1px solid var(--grn);color:var(--grn);border-radius:6px;padding:7px 14px;font-size:12px;cursor:pointer}
+    .btn:hover{background:rgba(0,194,122,.22)}
+    @media(max-width:700px){.grid2{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<h1>🇵🇰 InvestorLens — Analytics Dashboard</h1>
+<div class="sub">Owner view · Auto-refreshes every 30s</div>
+
+<div class="refresh">
+  <button class="btn" onclick="load()">↻ Refresh Now</button>
+  <span id="last-updated" style="margin-left:12px;color:var(--m);font-size:11px"></span>
+</div>
+
+<div class="kpis" id="kpis">
+  <div class="kpi"><div class="kpi-l">Live Users (5min)</div><div class="kpi-v" id="k-live">—</div></div>
+  <div class="kpi"><div class="kpi-l">Users Today</div><div class="kpi-v" id="k-24h">—</div></div>
+  <div class="kpi"><div class="kpi-l">Users This Week</div><div class="kpi-v" id="k-7d">—</div></div>
+  <div class="kpi"><div class="kpi-l">Users This Month</div><div class="kpi-v" id="k-30d">—</div></div>
+  <div class="kpi"><div class="kpi-l">Events Today</div><div class="kpi-v" id="k-ev24">—</div></div>
+  <div class="kpi"><div class="kpi-l">Events This Week</div><div class="kpi-v" id="k-ev7d">—</div></div>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h3>Module Popularity (Today)</h3>
+    <div id="module-bars"></div>
+  </div>
+  <div class="card">
+    <h3>Hourly Users (Last 24h)</h3>
+    <canvas id="hourly-chart" height="160"></canvas>
+  </div>
+</div>
+
+<div class="card">
+  <h3>Recent Events</h3>
+  <table>
+    <thead><tr><th>Event</th><th>Module</th><th>Session</th><th>Time</th></tr></thead>
+    <tbody id="events-body"></tbody>
+  </table>
+</div>
+
+<script>
+const pwd = new URLSearchParams(location.search).get("pwd") || "";
+let hourlyChart = null;
+
+async function load() {
+  try {
+    const r = await fetch(`/analytics/dashboard?pwd=${encodeURIComponent(pwd)}`);
+    if (!r.ok) { alert("Unauthorized"); return; }
+    const d = await r.json();
+    document.getElementById("k-live").textContent = d.live_users;
+    document.getElementById("k-24h").textContent  = d.users_24h;
+    document.getElementById("k-7d").textContent   = d.users_7d;
+    document.getElementById("k-30d").textContent  = d.users_30d;
+    document.getElementById("k-ev24").textContent = d.events_24h;
+    document.getElementById("k-ev7d").textContent = d.events_7d;
+    document.getElementById("last-updated").textContent = "Updated: " + new Date().toLocaleTimeString();
+
+    // Module bars
+    const max = Math.max(...d.module_breakdown.map(x=>x.views), 1);
+    document.getElementById("module-bars").innerHTML = d.module_breakdown.map(m=>
+      `<div class="bar-row">
+        <div class="bar-label">${m.module}</div>
+        <div class="bar-track"><div class="bar-fill" style="width:${m.views/max*100}%"></div></div>
+        <div class="bar-val">${m.views}</div>
+      </div>`
+    ).join("") || '<div style="color:var(--m);font-size:11px">No data yet</div>';
+
+    // Hourly chart
+    const labels = d.hourly_users.map(h=>`${h.hour}h`);
+    const vals   = d.hourly_users.map(h=>h.users);
+    if (hourlyChart) hourlyChart.destroy();
+    const ctx = document.getElementById("hourly-chart").getContext("2d");
+    hourlyChart = new Chart(ctx, {
+      type: "bar",
+      data: { labels, datasets: [{ data: vals, backgroundColor: "rgba(0,194,122,.5)", borderColor: "#00C27A", borderWidth: 1, borderRadius: 3 }] },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } },
+        scales: { x: { ticks: { color: "#526D8C", font: { size: 9 } }, grid: { color: "rgba(22,37,64,.6)" } },
+          y: { ticks: { color: "#526D8C", font: { size: 9 } }, grid: { color: "rgba(22,37,64,.6)" } } } }
+    });
+
+    // Events table
+    const tbody = document.getElementById("events-body");
+    tbody.innerHTML = d.recent_events.map(e=>`
+      <tr>
+        <td>${e.event}</td>
+        <td><span style="color:#00C27A">${e.module||"—"}</span></td>
+        <td style="font-family:'IBM Plex Mono',monospace;color:#526D8C">${e.session}</td>
+        <td style="color:#526D8C">${new Date(e.ts*1000).toLocaleTimeString()}</td>
+      </tr>`
+    ).join("") || '<tr><td colspan="4" style="color:var(--m);text-align:center">No events yet</td></tr>';
+
+  } catch(err) { console.error(err); }
+}
+
+load();
+setInterval(load, 30000);
+</script>
+</body>
+</html>

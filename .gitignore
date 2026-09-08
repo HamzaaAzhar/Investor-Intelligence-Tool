@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.env.*
+*.db
+server.log
+{psxapp/
+.DS_Store
